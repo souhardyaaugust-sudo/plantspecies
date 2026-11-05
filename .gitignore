@@ -1,0 +1,17 @@
+# Large dataset zip files (GitHub blocks files > 100MB)
+*.zip
+*.tar.gz
+*.rar
+archive*/
+
+# Python cache & virtual environments
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+env/
+
+# IDE files
+.vscode/
+.idea/

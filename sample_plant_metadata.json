@@ -1,0 +1,158 @@
+[
+  {
+    "species_id": "azadirachta_indica",
+    "scientific_name": "Azadirachta indica",
+    "common_names": ["Neem", "Nimtree", "Indian Lilac"],
+    "taxonomy": {
+      "kingdom": "Plantae",
+      "order": "Sapindales",
+      "family": "Meliaceae",
+      "genus": "Azadirachta",
+      "species": "A. indica"
+    },
+    "plant_type": "Evergreen Tree",
+    "native_region": "Indian subcontinent, Southeast Asia",
+    "characteristics": {
+      "max_height_meters": 20.0,
+      "leaf_type": "Pinnate compound leaf",
+      "flower_color": "White, fragrant",
+      "growth_rate": "Fast"
+    },
+    "care_and_environment": {
+      "sunlight": "Full Sun",
+      "watering": "Low to Moderate (Drought Resistant)",
+      "soil_type": "Well-drained, tolerant of poor sandy soils",
+      "preferred_ph": "6.0 - 7.5"
+    },
+    "safety_and_uses": {
+      "toxicity_human": "Leaves safe in low amounts; concentrated oil toxic if ingested in large quantities",
+      "toxicity_pets": "Non-toxic leaves, but seed oil extracts should be avoided",
+      "uses": ["Medicinal (Antiseptic/Pest control)", "Shade tree", "Traditional medicine"]
+    },
+    "dataset_image_distribution": {
+      "leaf": 120,
+      "bark": 45,
+      "flower": 30,
+      "fruit": 25,
+      "habit": 60,
+      "total": 280
+    }
+  },
+  {
+    "species_id": "quercus_robur",
+    "scientific_name": "Quercus robur",
+    "common_names": ["English Oak", "Pedunculate Oak"],
+    "taxonomy": {
+      "kingdom": "Plantae",
+      "order": "Fagales",
+      "family": "Fagaceae",
+      "genus": "Quercus",
+      "species": "Q. robur"
+    },
+    "plant_type": "Deciduous Tree",
+    "native_region": "Europe, Western Asia",
+    "characteristics": {
+      "max_height_meters": 40.0,
+      "leaf_type": "Lobed, alternate",
+      "flower_color": "Greenish yellow catkins",
+      "growth_rate": "Slow to Moderate"
+    },
+    "care_and_environment": {
+      "sunlight": "Full Sun",
+      "watering": "Moderate",
+      "soil_type": "Deep, fertile, well-drained loam or clay",
+      "preferred_ph": "5.5 - 7.2"
+    },
+    "safety_and_uses": {
+      "toxicity_human": "Acorns and young leaves contain tannins (mildly toxic raw)",
+      "toxicity_pets": "Toxic to horses, dogs, cattle if large quantities consumed",
+      "uses": ["Timber", "Landscape specimen", "Wildlife ecosystem support"]
+    },
+    "dataset_image_distribution": {
+      "leaf": 210,
+      "bark": 95,
+      "flower": 15,
+      "fruit": 80,
+      "habit": 110,
+      "total": 510
+    }
+  },
+  {
+    "species_id": "monstera_deliciosa",
+    "scientific_name": "Monstera deliciosa",
+    "common_names": ["Swiss Cheese Plant", "Split-leaf Philodendron"],
+    "taxonomy": {
+      "kingdom": "Plantae",
+      "order": "Alismatales",
+      "family": "Araceae",
+      "genus": "Monstera",
+      "species": "M. deliciosa"
+    },
+    "plant_type": "Tropical Vine / Houseplant",
+    "native_region": "Tropical forests of southern Mexico and Central America",
+    "characteristics": {
+      "max_height_meters": 3.0,
+      "leaf_type": "Fenestrated (perforated) broad leaf",
+      "flower_color": "White / Cream spathe",
+      "growth_rate": "Moderate"
+    },
+    "care_and_environment": {
+      "sunlight": "Bright, Indirect Light",
+      "watering": "Moderate (Allow top 2 inches of soil to dry)",
+      "soil_type": "Peat-based potting mix with perlite",
+      "preferred_ph": "5.5 - 7.0"
+    },
+    "safety_and_uses": {
+      "toxicity_human": "Contains insoluble calcium oxalates (causes irritation if chewed)",
+      "toxicity_pets": "Toxic to cats and dogs (mouth irritation, drooling, vomiting)",
+      "uses": ["Popular indoor ornamental", "Air purification"]
+    },
+    "dataset_image_distribution": {
+      "leaf": 310,
+      "bark": 0,
+      "flower": 12,
+      "fruit": 8,
+      "habit": 140,
+      "total": 470
+    }
+  },
+  {
+    "species_id": "rosa_canina",
+    "scientific_name": "Rosa canina",
+    "common_names": ["Dog Rose", "Wild Rose"],
+    "taxonomy": {
+      "kingdom": "Plantae",
+      "order": "Rosales",
+      "family": "Rosaceae",
+      "genus": "Rosa",
+      "species": "R. canina"
+    },
+    "plant_type": "Climbing Shrub",
+    "native_region": "Europe, Northwest Africa, Western Asia",
+    "characteristics": {
+      "max_height_meters": 4.0,
+      "leaf_type": "Pinnate with 5-7 leaflets",
+      "flower_color": "Pale pink to white",
+      "growth_rate": "Fast"
+    },
+    "care_and_environment": {
+      "sunlight": "Full Sun to Partial Shade",
+      "watering": "Moderate",
+      "soil_type": "Well-drained moist loam",
+      "preferred_ph": "6.0 - 7.0"
+    },
+    "safety_and_uses": {
+      "toxicity_human": "Hairs inside rose hips can irritate digestive tract if uncleaned",
+      "toxicity_pets": "Thorns pose physical hazard; leaves non-toxic",
+      "uses": ["Rose hip tea (High Vitamin C)", "Hedge planting", "Wildlife shelter"]
+    },
+    "dataset_image_distribution": {
+      "leaf": 85,
+      "bark": 10,
+      "flower": 290,
+      "fruit": 140,
+      "habit": 65,
+      "total": 590
+    }
+  }
+]
