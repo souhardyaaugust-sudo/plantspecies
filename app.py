@@ -1,7 +1,4 @@
 import streamlit as st
-import tensorflow as tf
-from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2, preprocess_input
-from tensorflow.keras.preprocessing.image import img_to_array
 from PIL import Image
 import numpy as np
 import json
@@ -11,7 +8,7 @@ import io
 import re
 
 # =============================================================================
-# 1. Page Configuration & Botanical Theme
+# 1. Page Configuration & Theme
 # =============================================================================
 st.set_page_config(
     page_title="Indian Flora AI — Plant Species & Pathology Diagnosis",
@@ -20,12 +17,15 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Modern Responsive Dark Styling
+# Clean, Modern Dark Theme with Guaranteed Text Contrast
 st.markdown("""
 <style>
-    .main { background-color: #0b0f19; }
+    .stApp {
+        background-color: #0b0f19;
+        color: #f1f5f9;
+    }
     .hero-title {
-        font-size: 2.5rem; font-weight: 800;
+        font-size: 2.4rem; font-weight: 800;
         background: linear-gradient(135deg, #10b981, #34d399, #059669);
         -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         margin-bottom: 0.2rem;
@@ -94,39 +94,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =============================================================================
-# 2. Resource & Model Loaders (Cached)
+# 2. Database Loader (Fast & Lightweight - 2ms startup)
 # =============================================================================
-@st.cache_resource
-def load_deep_cnn_classifier():
-    """Loads MobileNetV2 base extractor + Custom Trained 43-class Botanical Head"""
-    weights_path = os.path.abspath("weights/mobilenet_v2_weights_no_top.h5")
-    if os.path.exists(weights_path):
-        base = MobileNetV2(input_shape=(224, 224, 3), include_top=False, weights=weights_path, pooling="avg")
-    else:
-        base = MobileNetV2(input_shape=(224, 224, 3), include_top=False, weights="imagenet", pooling="avg")
-    
-    head = None
-    if os.path.exists("custom_botanical_head.keras"):
-        head = tf.keras.models.load_model("custom_botanical_head.keras")
-        
-    classes = []
-    if os.path.exists("botanical_classes.json"):
-        with open("botanical_classes.json", "r", encoding="utf-8") as f:
-            classes = json.load(f)
-            
-    return base, head, classes
-
-@st.cache_resource
-def load_clip_foundation():
-    """Loads OpenAI CLIP ViT-B/32 vision model from local cache"""
-    try:
-        from transformers import CLIPProcessor, CLIPModel
-        model = CLIPModel.from_pretrained('openai/clip-vit-base-patch32', local_files_only=True)
-        proc = CLIPProcessor.from_pretrained('openai/clip-vit-base-patch32', local_files_only=True)
-        return model, proc
-    except Exception:
-        return None, None
-
 @st.cache_data
 def load_botanical_database():
     """Loads authentic 140+ Indian flora profiles"""
@@ -142,7 +111,54 @@ def load_botanical_database():
                     db[k] = v
     return db
 
+plant_db = load_botanical_database()
+
+# =============================================================================
+# 3. Lazy Model Loaders (Only invoked when an image is processed)
+# =============================================================================
 @st.cache_resource
+def load_deep_cnn_classifier():
+    """Lazy-loads MobileNetV2 base extractor + Custom Trained 43-class Botanical Head"""
+    try:
+        import tensorflow as tf
+        from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2
+        
+        weights_path = os.path.abspath("weights/mobilenet_v2_weights_no_top.h5")
+        if os.path.exists(weights_path):
+            base = MobileNetV2(input_shape=(224, 224, 3), include_top=False, weights=weights_path, pooling="avg")
+        else:
+            base = MobileNetV2(input_shape=(224, 224, 3), include_top=False, weights="imagenet", pooling="avg")
+        
+        head = None
+        if os.path.exists("custom_botanical_head.keras"):
+            head = tf.keras.models.load_model("custom_botanical_head.keras")
+            
+        classes = []
+        if os.path.exists("botanical_classes.json"):
+            with open("botanical_classes.json", "r", encoding="utf-8") as f:
+                classes = json.load(f)
+                
+        return base, head, classes
+    except Exception as e:
+        return None, None, []
+
+@st.cache_resource
+def load_clip_foundation():
+    """Lazy-loads OpenAI CLIP ViT-B/32 vision model"""
+    try:
+        from transformers import CLIPProcessor, CLIPModel
+        try:
+            # Try local cache first (instant)
+            model = CLIPModel.from_pretrained('openai/clip-vit-base-patch32', local_files_only=True)
+            proc = CLIPProcessor.from_pretrained('openai/clip-vit-base-patch32', local_files_only=True)
+        except Exception:
+            # Cloud fallback (downloads from Hub if not cached locally)
+            model = CLIPModel.from_pretrained('openai/clip-vit-base-patch32')
+            proc = CLIPProcessor.from_pretrained('openai/clip-vit-base-patch32')
+        return model, proc
+    except Exception:
+        return None, None
+
 def get_gemini_client():
     """Returns Gemini client if API key is configured"""
     api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY") or ""
@@ -159,15 +175,9 @@ def get_gemini_client():
     except Exception:
         return None
 
-base_cnn, head_cnn, cnn_classes = load_deep_cnn_classifier()
-clip_model, clip_proc = load_clip_foundation()
-plant_db = load_botanical_database()
-gemini_client = get_gemini_client()
-
 # =============================================================================
-# 3. Botanical Knowledge Profiles & Domain Prompt Library
+# 4. Domain & Species Prompt Library
 # =============================================================================
-
 DOMAINS = [
     ("Tree", "a photo of a large Indian tree like banyan, peepal, neem or mango with trunk and canopy"),
     ("Fruit", "a close-up photo of a ripe fruit or harvest like apple, mango, banana, guava, papaya"),
@@ -227,9 +237,8 @@ INDIAN_SPECIES_BY_DOMAIN = {
 }
 
 # =============================================================================
-# 4. Multi-Engine Identification Pipeline
+# 5. Inference Utilities
 # =============================================================================
-
 def explainable_saliency_heatmap(image: Image.Image):
     """Generates OpenCV Edge & Structural Feature Attention Map"""
     np_img = np.array(image.convert("RGB"))
@@ -245,8 +254,12 @@ def explainable_saliency_heatmap(image: Image.Image):
 
 def classify_crop_leaf_cnn(image: Image.Image):
     """Deep CNN trained on 54,000 real crop leaf images from PlantVillage"""
-    if head_cnn is None or not cnn_classes:
+    base_cnn, head_cnn, cnn_classes = load_deep_cnn_classifier()
+    if head_cnn is None or not cnn_classes or base_cnn is None:
         return []
+    from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
+    from tensorflow.keras.preprocessing.image import img_to_array
+    
     img_resized = image.convert("RGB").resize((224, 224))
     arr = np.expand_dims(img_to_array(img_resized), axis=0)
     features = base_cnn(preprocess_input(arr), training=False)
@@ -256,7 +269,8 @@ def classify_crop_leaf_cnn(image: Image.Image):
 
 def query_gemini_vision(image: Image.Image):
     """Multimodal Vision Inference with Gemini 2.0 Flash"""
-    if gemini_client is None:
+    client = get_gemini_client()
+    if client is None:
         return None
     try:
         buf = io.BytesIO()
@@ -276,7 +290,7 @@ Return JSON ONLY:
     "identifying_features": "Visual evidence"
 }"""
         from google.genai import types
-        response = gemini_client.models.generate_content(
+        response = client.models.generate_content(
             model="gemini-2.0-flash",
             contents=[
                 types.Content(
@@ -296,13 +310,9 @@ Return JSON ONLY:
         return None
 
 def hierarchical_botanical_classifier(image: Image.Image):
-    """
-    Hierarchical 2-Stage Zero-Shot & Deep Learning Pipeline:
-    Stage 1: Detect Macro Domain (Tree, Fruit, Flower, Crop Leaf, Herb)
-    Stage 2: Execute domain-specialized classifier (CLIP or 43-Class PlantVillage CNN)
-    """
+    """Hierarchical 2-Stage Zero-Shot & Deep Learning Pipeline"""
+    clip_model, clip_proc = load_clip_foundation()
     if clip_model is None or clip_proc is None:
-        # Fallback to CNN
         preds = classify_crop_leaf_cnn(image)
         if preds:
             top_name, top_conf = preds[0]
@@ -325,11 +335,9 @@ def hierarchical_botanical_classifier(image: Image.Image):
     
     best_domain_idx = int(macro_probs.argmax())
     detected_domain = DOMAINS[best_domain_idx][0]
-    domain_conf = float(macro_probs[best_domain_idx])
     
     # Stage 2: Specialized Branching
     if detected_domain == "Crop Leaf":
-        # Check Crop CNN first
         cnn_preds = classify_crop_leaf_cnn(image)
         if cnn_preds and cnn_preds[0][1] > 0.40:
             top_class, conf = cnn_preds[0]
@@ -341,7 +349,6 @@ def hierarchical_botanical_classifier(image: Image.Image):
                 "engine": "MobileNetV2 Transfer Learning CNN (54k images)"
             }
 
-    # Use Domain Species Candidates
     candidates = INDIAN_SPECIES_BY_DOMAIN.get(detected_domain, INDIAN_SPECIES_BY_DOMAIN["Tree"])
     prompts = [desc for _, desc in candidates]
     inputs2 = clip_proc(text=prompts, images=image, return_tensors='pt', padding=True)
@@ -365,59 +372,53 @@ def find_db_profile(species_name, sci_name=""):
     if not species_name:
         return None
     s_lower = species_name.lower().strip()
-    
-    # Direct match
     for k, v in plant_db.items():
         if k.lower() == s_lower or v.get("species", "").lower() == s_lower:
             return v
-    
-    # Split prefix (e.g. "Apple - healthy" -> "Apple")
     base_name = species_name.split(" - ")[0].split(" (")[0].strip().lower()
     for k, v in plant_db.items():
         if k.lower() == base_name or v.get("species", "").lower() == base_name:
             return v
-            
-    # Substring match
     for k, v in plant_db.items():
         if base_name in k.lower() or k.lower() in base_name:
             return v
-            
     return None
 
 # =============================================================================
-# 5. Sidebar Controls
+# 6. Sidebar Controls
 # =============================================================================
 with st.sidebar:
     st.markdown("### 🌿 **Indian Flora AI**")
     st.caption("Plant Species & Pathology Diagnosis System")
     st.divider()
     
-    st.markdown("#### ⚡ AI Engines Status")
-    if gemini_client:
+    st.markdown("#### ⚡ AI Engines")
+    client = get_gemini_client()
+    if client:
         st.success("🟢 **Gemini 2.0 Flash Vision**: Active")
     else:
-        st.info("ℹ️ **Gemini API**: Optional (Add Key below)")
+        st.info("ℹ️ **Gemini Cloud Vision**: Optional")
         with st.expander("🔑 Connect Gemini API Key"):
-            k_input = st.text_input("Gemini API Key:", type="password", key="sidebar_key")
+            k_input = st.text_input("Enter Key:", type="password", key="sidebar_key")
             if k_input:
                 os.environ["GEMINI_API_KEY"] = k_input
-                st.success("API Key saved! Click to reload.")
-                st.button("Activate Key", on_click=lambda: st.rerun())
+                st.success("Saved! Click below to activate.")
+                st.button("Activate", on_click=lambda: st.rerun())
                 
-    st.success("🟢 **Hierarchical Vision Pipeline**: Active")
-    st.success(f"🟢 **Deep CNN Classifier**: {len(cnn_classes)} Crop Pathology Classes")
+    st.success("🟢 **Hierarchical Vision Pipeline**: Ready")
+    st.success("🟢 **Deep Crop Pathology CNN**: Ready")
     
     st.divider()
     st.markdown("#### 📊 Knowledge Base")
-    st.metric("Total Documented Species", len(plant_db))
-    st.caption("🇮🇳 Includes Trees, Flowers, Fruits, Crops & Ayurvedic Herbs")
+    st.metric("Documented Indian Species", len(plant_db))
+    st.caption("🇮🇳 Trees, Flowers, Fruits, Crops & Ayurvedic Herbs")
     
     st.divider()
     input_source = st.radio("Input Source:", ["📸 Upload Image", "🧪 Select Verified Sample", "📷 Webcam Snapshot"])
     show_heatmap = st.toggle("🧠 Explainable AI (Edge Saliency)", value=True)
 
 # =============================================================================
-# 6. Main Dashboard Interface
+# 7. Main Dashboard Interface
 # =============================================================================
 st.markdown('<div class="hero-title">🌿 Indian Flora Species & Pathology AI</div>', unsafe_allow_html=True)
 st.markdown('<div class="hero-subtitle">University Major Project — Specialized for Indian Botanical Flora, Keystone Trees, Agricultural Crops & Ayurvedic Herbs</div>', unsafe_allow_html=True)
@@ -462,13 +463,9 @@ with tab_id:
         st.markdown("#### 2. Botanical Identification Report")
         if target_img:
             with st.spinner("🌿 Analyzing across Hierarchical AI Vision Engines..."):
-                # 1. Check Gemini Cloud Vision first if key exists
                 gemini_res = query_gemini_vision(target_img)
-                
-                # 2. Hierarchical Local AI Vision
                 local_res = hierarchical_botanical_classifier(target_img)
                 
-                # Decision Fusion
                 if gemini_res and gemini_res.get("confidence", 0) > 0.60:
                     species_name = gemini_res.get("species", "Unknown")
                     sci_name = gemini_res.get("scientific_name", "")
@@ -493,7 +490,6 @@ with tab_id:
                     species_name = None
                     
             if species_name:
-                # Candidate Selector
                 if len(candidates) > 1:
                     cand_names = [c[0] for c in candidates[:4]]
                     sel_cand = st.radio("🌿 Candidate Matches (Click to inspect):", cand_names, index=0, horizontal=True)
@@ -501,7 +497,6 @@ with tab_id:
                         species_name = sel_cand
                         confidence = next((c[1] for c in candidates if c[0] == sel_cand), confidence)
 
-                # Fetch Botanical Profile
                 profile = find_db_profile(species_name, sci_name)
                 if not profile:
                     profile = {
@@ -518,7 +513,6 @@ with tab_id:
                         "uses": "Ecological, shade, or agricultural significance."
                     }
                 
-                # Render Primary Card
                 final_sci = sci_name or profile.get("scientific_name", "N/A")
                 is_diseased = "diseas" in profile.get("health_status", "").lower() or "blight" in species_name.lower() or "rot" in species_name.lower() or "rust" in species_name.lower() or "scab" in species_name.lower()
                 status_badge = '<span class="badge badge-red">🔴 PATHOLOGY DETECTED</span>' if is_diseased else '<span class="badge badge-green">🟢 HEALTHY SPECIES</span>'
@@ -545,7 +539,6 @@ with tab_id:
                 
                 st.progress(min(float(confidence), 1.0))
                 
-                # Regional Names
                 regional = profile.get("regional_names", {})
                 if regional and any(regional.values()):
                     parts = [f"<b>{lang.title()}:</b> {val}" for lang, val in regional.items() if val]
@@ -556,7 +549,6 @@ with tab_id:
                     </div>
                     """, unsafe_allow_html=True)
                 
-                # Pathology & Disease Diagnosis
                 if is_diseased or condition_diag:
                     cond_name = condition_diag or profile.get("condition_type", species_name)
                     treat_val = treatment_rec or profile.get("treatment", "Apply organic copper-based fungicide and isolate infected foliage.")
@@ -567,7 +559,6 @@ with tab_id:
                     </div>
                     """, unsafe_allow_html=True)
                     
-                # Phytochemical & Bioactive Compounds
                 compounds = profile.get("active_compounds", "")
                 if compounds:
                     st.markdown(f"""
@@ -577,7 +568,6 @@ with tab_id:
                     </div>
                     """, unsafe_allow_html=True)
                     
-                # Traditional Ayurvedic Uses
                 ayur = profile.get("ayurvedic_uses", "")
                 if ayur:
                     st.markdown(f"""
@@ -587,7 +577,6 @@ with tab_id:
                     </div>
                     """, unsafe_allow_html=True)
                     
-                # Care Guide
                 st.markdown("### ☀️ Cultivation & Environmental Care")
                 c1, c2 = st.columns(2)
                 with c1:
@@ -613,7 +602,6 @@ with tab_id:
                     </div>
                     """, unsafe_allow_html=True)
                     
-                # Toxicity Safety
                 tox = profile.get("toxicity_pets", "")
                 if tox:
                     is_safe = "non-toxic" in tox.lower() or "safe" in tox.lower() or "not toxic" in tox.lower()
@@ -627,7 +615,6 @@ with tab_id:
                     </div>
                     """, unsafe_allow_html=True)
                     
-                # Probability Distribution Expander
                 if candidates:
                     with st.expander("📊 Candidate Probability Distribution"):
                         for rank, (cand, prob) in enumerate(candidates[:5]):
