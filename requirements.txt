@@ -6,3 +6,6 @@ requests
 matplotlib
 pandas
 opencv-python-headless
+transformers
+torch
+google-genai

@@ -1,43 +1,93 @@
-# Plant & Tree Species Identification - Semester Major Project
+# Indian Flora AI — Plant Species Identification System
 
-This workspace contains the initial **Dataset Analysis, Gap Identification, and Feature Enhancement** setup for the Plant Species Identification App.
+🌿 **AI-powered plant identification system specialized for Indian flora** — trees, flowers, fruits, crops, herbs & medicinal plants.
 
----
+## 🎯 Features
 
-## 📁 Workspace Files
+- **Multi-Engine AI Pipeline**: Combines Gemini Vision API + CLIP ViT-B/32 + Custom Deep CNN for maximum accuracy
+- **100+ Indian Plant Species**: Comprehensive database covering trees, flowers, fruits, crops, herbs & medicinal plants
+- **Disease Diagnosis**: Identifies 43 crop leaf diseases with treatment recommendations
+- **Botanical Encyclopedia**: Browse all species with scientific names, phytochemicals, and care guides
+- **Ayurvedic Information**: Traditional medicinal uses for Indian plants
+- **Regional Names**: Hindi, Tamil, and Bengali names for all species
+- **Explainable AI**: Saliency heatmap visualization showing AI attention regions
 
-1. `plant_dataset_analysis_report.md` (Artifact): Full report ready to present/submit to your professor.
-2. `sample_plant_metadata.json`: Standardized JSON metadata catalog combining image labels with plant care, taxonomy, and safety features.
-3. `fetch_botanical_metadata.py`: Automated Python script fetching taxonomy from **GBIF API** and descriptions from **Wikipedia API**.
-4. `dataset_analysis.py`: Exploratory Data Analysis (EDA) script generating class distribution and organ breakdown charts.
-5. `dataset_analysis_chart.png`: Visual chart showing organ breakdown and class imbalance.
+## 🏗️ Architecture
 
----
-
-## 🚀 How to Run the Scripts
-
-### 1. Test Botanical API Metadata Fetcher
-Fetch taxonomy and summary details for any plant's scientific name:
-```bash
-python fetch_botanical_metadata.py "Azadirachta indica" "Quercus robur"
+```
+┌─────────────────────────────────────────────────────┐
+│                    User Upload                       │
+│            (Photo of any Indian plant)              │
+└───────────────────────┬─────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────┐
+│          Smart Identification Pipeline              │
+│                                                     │
+│  ┌─────────────┐  ┌──────────────┐  ┌───────────┐  │
+│  │  Engine 1    │  │  Engine 2     │  │ Engine 3  │  │
+│  │ Gemini       │  │ CLIP ViT     │  │ Custom    │  │
+│  │ Vision API   │  │ Zero-Shot    │  │ CNN       │  │
+│  │ (Primary)    │  │ (Fallback)   │  │ (Crops)   │  │
+│  └──────┬──────┘  └──────┬───────┘  └─────┬─────┘  │
+│         │                │               │          │
+│         ▼                ▼               ▼          │
+│  ┌──────────────────────────────────────────────┐   │
+│  │          Confidence Gate & Fusion             │   │
+│  │   (Rejects low-confidence misidentifications) │   │
+│  └──────────────────────┬───────────────────────┘   │
+└─────────────────────────┼───────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────┐
+│          Indian Flora Knowledge Base                 │
+│    (100+ species with botanical & Ayurvedic data)   │
+└─────────────────────────┬───────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────┐
+│              Identification Report                   │
+│  • Species & Scientific Name                        │
+│  • Regional Names (Hindi, Tamil, Bengali)           │
+│  • Phytochemicals & Bioactive Compounds             │
+│  • Ayurvedic & Traditional Uses                     │
+│  • Cultivation & Care Guide                         │
+│  • Toxicity & Conservation Status                   │
+└─────────────────────────────────────────────────────┘
 ```
 
-### 2. Run Dataset Exploratory Analysis (EDA)
-Generate analysis metrics and save visual charts (`dataset_analysis_chart.png`):
+## 🛠️ Tech Stack
+
+- **Frontend**: Streamlit
+- **Deep Learning**: TensorFlow/Keras (MobileNetV2 transfer learning)
+- **Vision AI**: Google Gemini API, OpenAI CLIP (ViT-B/32)
+- **Computer Vision**: OpenCV (saliency heatmaps)
+- **Language**: Python 3.13+
+
+## 🚀 Setup
+
 ```bash
-python dataset_analysis.py
+pip install -r requirements.txt
+streamlit run app.py
 ```
 
----
+### Optional: Enable Gemini Vision API
+For the most accurate identification, add your Gemini API key:
+```bash
+export GEMINI_API_KEY=your_key_here
+```
+Or enter it in the sidebar of the app.
 
-## 📊 Summary of Recommendations for Your Professor
+## 📊 Plant Database
 
-1. **Recommended Base Dataset**: **Pl@ntNet-300K** (or **Pl@ntNet-Mini** for initial model training) because it includes real-world outdoor images with organ tags (`leaf`, `flower`, `fruit`, `bark`, `habit`).
-2. **Key Data Gaps Identified**:
-   - Raw vision datasets only provide class labels (e.g. `Quercus_robur`), missing common names, family, genus, sunlight/watering needs, toxicity, and medicinal/ecological uses.
-   - Organ imbalances (leaves dominate, while bark/flowers are fewer).
-   - Class imbalance across rare vs. common species.
-3. **Proposed Dataset Enhancements**:
-   - **Data Fusion Engine**: Combine image dataset with REST APIs (GBIF & Wikipedia) to build a rich JSON plant catalog.
-   - **Organ-Aware Training**: Support organ tags (`leaf`, `flower`, `bark`) so users can upload photos of leaves OR tree trunks.
-   - **Structured Metadata Schema**: Standardized JSON format linking vision model predictions to rich UI care cards.
+The system includes **100+ species** organized into:
+- 🌳 **Trees**: Banyan, Peepal, Neem, Mango, Coconut, Teak, Ashoka, etc.
+- 🌸 **Flowers**: Lotus, Marigold, Jasmine, Hibiscus, Rose, Sunflower, etc.
+- 🍎 **Fruits**: Mango, Banana, Apple, Guava, Pomegranate, Papaya, etc.
+- 🌾 **Crops**: Rice, Wheat, Sugarcane, Tomato, Potato, Cotton, etc.
+- 🌿 **Herbs**: Tulsi, Ashwagandha, Brahmi, Aloe Vera, Turmeric, etc.
+- 💧 **Aquatic**: Lotus, Water Lily, Mangrove, etc.
+
+## 📄 License
+
+University Major Project — Plant Species Identification System
