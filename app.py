@@ -5,100 +5,184 @@ import json
 import os
 import cv2
 import io
-import re
 
 # =============================================================================
-# 1. Page Configuration & Theme
+# 1. Page Configuration & Natural Botanical Theme
 # =============================================================================
 st.set_page_config(
-    page_title="Indian Flora AI — Plant Species & Pathology Diagnosis",
+    page_title="FloraScan India — Plant Species & Health Diagnostic System",
     page_icon="🌿",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-# Clean, Modern Dark Theme with Guaranteed Text Contrast
+# Clean, authentic university research theme (Natural Forest & Sage Green)
 st.markdown("""
 <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Lora:ital,wght@0,500;0,600;1,400;1,600&display=swap');
+    
+    html, body, [class*="css"] {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    
     .stApp {
-        background-color: #0b0f19;
+        background-color: #0f172a;
         color: #f1f5f9;
     }
-    .hero-title {
-        font-size: 2.4rem; font-weight: 800;
-        background: linear-gradient(135deg, #10b981, #34d399, #059669);
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-        margin-bottom: 0.2rem;
+    
+    .project-header {
+        padding: 8px 0 20px 0;
+        border-bottom: 1px solid #1e293b;
+        margin-bottom: 24px;
     }
-    .hero-subtitle {
-        font-size: 1.05rem; color: #94a3b8; margin-bottom: 1.5rem;
+    .project-title {
+        font-size: 2.2rem;
+        font-weight: 800;
+        color: #f8fafc;
+        letter-spacing: -0.5px;
+        margin: 0;
     }
-    .result-card {
-        background: linear-gradient(145deg, #1e293b, #0f172a);
-        border-radius: 16px; padding: 24px;
+    .project-subtitle {
+        font-size: 1rem;
+        color: #94a3b8;
+        margin-top: 6px;
+        line-height: 1.5;
+    }
+    .project-badge {
+        display: inline-block;
+        background-color: #1e293b;
+        color: #34d399;
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 6px;
         border: 1px solid #334155;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+        margin-bottom: 10px;
+    }
+    
+    /* Result Card */
+    .species-card {
+        background-color: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 12px;
+        padding: 24px;
         margin-bottom: 20px;
     }
-    .species-title {
-        font-size: 2.1rem; font-weight: 800; color: #f8fafc; margin: 0;
+    .plant-name {
+        font-size: 1.9rem;
+        font-weight: 700;
+        color: #ffffff;
+        margin: 0;
     }
-    .sci-title {
-        font-style: italic; color: #34d399; font-size: 1.15rem; font-weight: 600; margin-top: 4px;
+    .scientific-name {
+        font-family: 'Lora', serif;
+        font-style: italic;
+        color: #34d399;
+        font-size: 1.15rem;
+        margin-top: 4px;
     }
-    .badge {
-        display: inline-block; padding: 4px 12px;
-        border-radius: 20px; font-weight: 700; font-size: 0.82rem;
-        margin-right: 6px; margin-bottom: 6px;
-    }
-    .badge-green { background: #064e3b; color: #6ee7b7; border: 1px solid #047857; }
-    .badge-blue { background: #1e3a5f; color: #93c5fd; border: 1px solid #2563eb; }
-    .badge-purple { background: #4c1d95; color: #c4b5fd; border: 1px solid #7c3aed; }
-    .badge-amber { background: #78350f; color: #fde68a; border: 1px solid #d97706; }
-    .badge-red { background: #7f1d1d; color: #fca5a5; border: 1px solid #dc2626; }
     
-    .conf-pill {
-        background: linear-gradient(135deg, #059669, #10b981);
-        color: white; padding: 6px 14px; border-radius: 20px;
-        font-weight: 800; font-size: 0.95rem;
+    /* Status Badges */
+    .status-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 5px 14px;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 600;
     }
-    .info-box {
-        background: #1e293b; border-radius: 10px; padding: 14px 18px;
-        border: 1px solid #334155; margin-bottom: 12px;
+    .status-healthy {
+        background-color: #064e3b;
+        color: #6ee7b7;
+        border: 1px solid #047857;
     }
-    .box-label {
-        font-weight: 700; color: #94a3b8; font-size: 0.8rem;
-        text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px;
+    .status-warning {
+        background-color: #450a0a;
+        color: #fca5a5;
+        border: 1px solid #991b1b;
     }
-    .box-val { color: #f1f5f9; font-size: 0.95rem; }
+    .conf-tag {
+        background-color: #047857;
+        color: #ffffff;
+        padding: 5px 12px;
+        border-radius: 6px;
+        font-weight: 700;
+        font-size: 0.9rem;
+    }
     
-    .chem-box {
-        background: #082f49; border-left: 4px solid #0284c7;
-        padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 10px 0;
+    /* Data Sections */
+    .section-header {
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: #f1f5f9;
+        margin: 18px 0 10px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
-    .ayur-box {
-        background: #2e1065; border-left: 4px solid #a855f7;
-        padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 10px 0;
+    
+    .data-card {
+        background-color: #162032;
+        border: 1px solid #283548;
+        border-radius: 8px;
+        padding: 14px 16px;
+        margin-bottom: 10px;
     }
-    .pathology-box {
-        background: #450a0a; border-left: 4px solid #ef4444;
-        padding: 12px 16px; border-radius: 0 8px 8px 0; margin: 10px 0;
+    .data-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: #94a3b8;
+        letter-spacing: 0.5px;
+        margin-bottom: 3px;
     }
-    .enc-card {
-        background: #1e293b; border-radius: 12px; padding: 16px;
-        border: 1px solid #334155; margin-bottom: 14px;
-        transition: transform 0.2s;
+    .data-value {
+        font-size: 0.92rem;
+        color: #e2e8f0;
+        line-height: 1.5;
     }
-    .enc-card:hover { transform: translateY(-3px); }
+    
+    /* Disease Treatment Box */
+    .diagnosis-box {
+        background-color: #2a1215;
+        border-left: 4px solid #ef4444;
+        border-radius: 0 8px 8px 0;
+        padding: 14px 16px;
+        margin: 12px 0;
+    }
+    
+    /* Encyclopedia Item */
+    .catalog-item {
+        background-color: #1e293b;
+        border: 1px solid #2d3b4f;
+        border-radius: 10px;
+        padding: 16px;
+        margin-bottom: 12px;
+        transition: transform 0.15s ease;
+    }
+    .catalog-item:hover {
+        border-color: #34d399;
+        transform: translateY(-2px);
+    }
+    
+    /* Clean Footer */
+    .footer-text {
+        text-align: center;
+        color: #64748b;
+        font-size: 0.85rem;
+        padding: 24px 0 12px 0;
+        line-height: 1.6;
+    }
 </style>
 """, unsafe_allow_html=True)
 
 # =============================================================================
-# 2. Database Loader (Fast & Lightweight - 2ms startup)
+# 2. Plant Database Loader
 # =============================================================================
 @st.cache_data
-def load_botanical_database():
-    """Loads authentic 140+ Indian flora profiles"""
+def load_database():
+    """Loads curated botanical database with 140 Indian flora species"""
     db = {}
     if os.path.exists("indian_plant_database.json"):
         with open("indian_plant_database.json", "r", encoding="utf-8") as f:
@@ -111,14 +195,14 @@ def load_botanical_database():
                     db[k] = v
     return db
 
-plant_db = load_botanical_database()
+plant_db = load_database()
 
 # =============================================================================
-# 3. Lazy Model Loaders (Only invoked when an image is processed)
+# 3. Model Loading (Lazy Cached)
 # =============================================================================
 @st.cache_resource
-def load_deep_cnn_classifier():
-    """Lazy-loads MobileNetV2 base extractor + Custom Trained 43-class Botanical Head"""
+def load_cnn_model():
+    """Loads fine-tuned MobileNetV2 classifier trained on PlantVillage (54,000 images)"""
     try:
         import tensorflow as tf
         from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2
@@ -139,46 +223,28 @@ def load_deep_cnn_classifier():
                 classes = json.load(f)
                 
         return base, head, classes
-    except Exception as e:
+    except Exception:
         return None, None, []
 
 @st.cache_resource
-def load_clip_foundation():
-    """Lazy-loads OpenAI CLIP ViT-B/32 vision model"""
+def load_vision_embedder():
+    """Loads visual feature embedder for open-set flora classification"""
     try:
         from transformers import CLIPProcessor, CLIPModel
         try:
-            # Try local cache first (instant)
             model = CLIPModel.from_pretrained('openai/clip-vit-base-patch32', local_files_only=True)
             proc = CLIPProcessor.from_pretrained('openai/clip-vit-base-patch32', local_files_only=True)
         except Exception:
-            # Cloud fallback (downloads from Hub if not cached locally)
             model = CLIPModel.from_pretrained('openai/clip-vit-base-patch32')
             proc = CLIPProcessor.from_pretrained('openai/clip-vit-base-patch32')
         return model, proc
     except Exception:
         return None, None
 
-def get_gemini_client():
-    """Returns Gemini client if API key is configured"""
-    api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY") or ""
-    if not api_key:
-        try:
-            api_key = st.secrets.get("GEMINI_API_KEY", "")
-        except Exception:
-            pass
-    if not api_key:
-        return None
-    try:
-        from google import genai
-        return genai.Client(api_key=api_key)
-    except Exception:
-        return None
-
 # =============================================================================
-# 4. Domain & Species Prompt Library
+# 4. Botanical Categories & Reference Prototypes
 # =============================================================================
-DOMAINS = [
+MACRO_CATEGORIES = [
     ("Tree", "a photo of a large Indian tree like banyan, peepal, neem or mango with trunk and canopy"),
     ("Fruit", "a close-up photo of a ripe fruit or harvest like apple, mango, banana, guava, papaya"),
     ("Flower", "a close-up photo of a blooming flower blossom like rose, sunflower, lotus, marigold, hibiscus"),
@@ -186,7 +252,7 @@ DOMAINS = [
     ("Medicinal Herb", "a close-up photo of a medicinal herb or succulent like aloe vera, tulsi, mint")
 ]
 
-INDIAN_SPECIES_BY_DOMAIN = {
+SPECIES_REFERENCES = {
     "Tree": [
         ("Banyan", "a photo of a huge spreading Indian banyan tree ficus benghalensis with aerial roots hanging down from branches and wide canopy"),
         ("Sacred Fig (Peepal)", "a photo of a sacred fig peepal tree ficus religiosa with heart shaped leaves"),
@@ -237,10 +303,10 @@ INDIAN_SPECIES_BY_DOMAIN = {
 }
 
 # =============================================================================
-# 5. Inference Utilities
+# 5. Diagnostic Functions
 # =============================================================================
-def explainable_saliency_heatmap(image: Image.Image):
-    """Generates OpenCV Edge & Structural Feature Attention Map"""
+def generate_saliency_map(image: Image.Image):
+    """Computes edge & structural gradient response map using Sobel operators"""
     np_img = np.array(image.convert("RGB"))
     gray = cv2.cvtColor(np_img, cv2.COLOR_RGB2GRAY)
     grad_x = cv2.Sobel(gray, cv2.CV_32F, 1, 0, ksize=3)
@@ -252,123 +318,83 @@ def explainable_saliency_heatmap(image: Image.Image):
     heatmap_rgb = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
     return Image.fromarray(cv2.addWeighted(np_img, 0.65, heatmap_rgb, 0.35, 0))
 
-def classify_crop_leaf_cnn(image: Image.Image):
-    """Deep CNN trained on 54,000 real crop leaf images from PlantVillage"""
-    base_cnn, head_cnn, cnn_classes = load_deep_cnn_classifier()
-    if head_cnn is None or not cnn_classes or base_cnn is None:
+def run_crop_pathology_cnn(image: Image.Image):
+    """Inference via fine-tuned MobileNetV2 on crop leaf pathology"""
+    base, head, classes = load_cnn_model()
+    if head is None or not classes or base is None:
         return []
     from tensorflow.keras.applications.mobilenet_v2 import preprocess_input
     from tensorflow.keras.preprocessing.image import img_to_array
     
     img_resized = image.convert("RGB").resize((224, 224))
     arr = np.expand_dims(img_to_array(img_resized), axis=0)
-    features = base_cnn(preprocess_input(arr), training=False)
-    preds = head_cnn.predict(features, verbose=0)[0]
+    features = base(preprocess_input(arr), training=False)
+    preds = head.predict(features, verbose=0)[0]
     top_indices = np.argsort(preds)[::-1][:5]
-    return [(cnn_classes[idx], float(preds[idx])) for idx in top_indices]
+    return [(classes[idx], float(preds[idx])) for idx in top_indices]
 
-def query_gemini_vision(image: Image.Image):
-    """Multimodal Vision Inference with Gemini 2.0 Flash"""
-    client = get_gemini_client()
-    if client is None:
-        return None
-    try:
-        buf = io.BytesIO()
-        image.save(buf, format="JPEG")
-        prompt = """Identify the plant, tree, flower, fruit, or leaf in this photo.
-Return JSON ONLY:
-{
-    "species": "Common Name",
-    "scientific_name": "Genus species",
-    "family": "Family name",
-    "confidence": 0.95,
-    "category": "tree/flower/fruit/crop/herb",
-    "hindi_name": "Hindi name if known",
-    "health_status": "Healthy / Diseased",
-    "condition_diagnosis": "Name of disease or Healthy",
-    "treatment": "Cure if diseased, else maintenance",
-    "identifying_features": "Visual evidence"
-}"""
-        from google.genai import types
-        response = client.models.generate_content(
-            model="gemini-2.0-flash",
-            contents=[
-                types.Content(
-                    role="user",
-                    parts=[
-                        types.Part.from_bytes(data=buf.getvalue(), mime_type="image/jpeg"),
-                        types.Part.from_text(text=prompt)
-                    ]
-                )
-            ]
-        )
-        text = response.text.strip()
-        text = re.sub(r'^```json\s*', '', text)
-        text = re.sub(r'\s*```$', '', text)
-        return json.loads(text)
-    except Exception:
-        return None
-
-def hierarchical_botanical_classifier(image: Image.Image):
-    """Hierarchical 2-Stage Zero-Shot & Deep Learning Pipeline"""
-    clip_model, clip_proc = load_clip_foundation()
-    if clip_model is None or clip_proc is None:
-        preds = classify_crop_leaf_cnn(image)
-        if preds:
-            top_name, top_conf = preds[0]
+def run_identification_pipeline(image: Image.Image):
+    """Hierarchical two-stage botanical identification pipeline"""
+    model, proc = load_vision_embedder()
+    
+    if model is None or proc is None:
+        # Fallback to CNN directly
+        cnn_preds = run_crop_pathology_cnn(image)
+        if cnn_preds:
+            top_name, top_conf = cnn_preds[0]
             return {
                 "species": top_name,
                 "confidence": top_conf,
-                "domain": "Crop Leaf",
-                "candidates": preds,
-                "engine": "MobileNetV2 CNN (PlantVillage)"
+                "category": "Agricultural Crop",
+                "candidates": cnn_preds,
+                "model_type": "MobileNetV2 CNN (Plant Pathology)"
             }
         return None
 
     import torch
 
-    # Stage 1: Detect Macro Domain
-    macro_prompts = [desc for _, desc in DOMAINS]
-    inputs = clip_proc(text=macro_prompts, images=image, return_tensors='pt', padding=True)
+    # Step 1: Broad Category Classification
+    cat_prompts = [desc for _, desc in MACRO_CATEGORIES]
+    inputs = proc(text=cat_prompts, images=image, return_tensors='pt', padding=True)
     with torch.no_grad():
-        macro_probs = clip_model(**inputs).logits_per_image.softmax(dim=1)[0].numpy()
+        cat_probs = model(**inputs).logits_per_image.softmax(dim=1)[0].numpy()
     
-    best_domain_idx = int(macro_probs.argmax())
-    detected_domain = DOMAINS[best_domain_idx][0]
+    best_cat_idx = int(cat_probs.argmax())
+    detected_category = MACRO_CATEGORIES[best_cat_idx][0]
     
-    # Stage 2: Specialized Branching
-    if detected_domain == "Crop Leaf":
-        cnn_preds = classify_crop_leaf_cnn(image)
+    # Step 2: Branching
+    if detected_category == "Crop Leaf":
+        cnn_preds = run_crop_pathology_cnn(image)
         if cnn_preds and cnn_preds[0][1] > 0.40:
             top_class, conf = cnn_preds[0]
             return {
                 "species": top_class,
                 "confidence": conf,
-                "domain": "Crop Leaf & Pathology",
+                "category": "Agricultural Crop Leaf",
                 "candidates": cnn_preds,
-                "engine": "MobileNetV2 Transfer Learning CNN (54k images)"
+                "model_type": "Transfer Learning CNN (MobileNetV2)"
             }
 
-    candidates = INDIAN_SPECIES_BY_DOMAIN.get(detected_domain, INDIAN_SPECIES_BY_DOMAIN["Tree"])
+    candidates = SPECIES_REFERENCES.get(detected_category, SPECIES_REFERENCES["Tree"])
     prompts = [desc for _, desc in candidates]
-    inputs2 = clip_proc(text=prompts, images=image, return_tensors='pt', padding=True)
+    inputs2 = proc(text=prompts, images=image, return_tensors='pt', padding=True)
     with torch.no_grad():
-        species_probs = clip_model(**inputs2).logits_per_image.softmax(dim=1)[0].numpy()
+        probs = model(**inputs2).logits_per_image.softmax(dim=1)[0].numpy()
     
-    ranked_indices = np.argsort(species_probs)[::-1]
-    ranked_results = [(candidates[idx][0], float(species_probs[idx])) for idx in ranked_indices]
+    ranked_indices = np.argsort(probs)[::-1]
+    ranked_results = [(candidates[idx][0], float(probs[idx])) for idx in ranked_indices]
     
     top_species, top_conf = ranked_results[0]
     return {
         "species": top_species,
         "confidence": top_conf,
-        "domain": detected_domain,
+        "category": detected_category,
         "candidates": ranked_results[:5],
-        "engine": f"Hierarchical Vision AI ({detected_domain} Stage)"
+        "model_type": f"Hierarchical Vision Pipeline ({detected_category} Branch)"
     }
 
-def find_db_profile(species_name, sci_name=""):
-    """Fetches full botanical and Ayurvedic profile from JSON database"""
+def get_species_profile(species_name):
+    """Retrieves species record from the knowledge base"""
     if not species_name:
         return None
     s_lower = species_name.lower().strip()
@@ -385,295 +411,305 @@ def find_db_profile(species_name, sci_name=""):
     return None
 
 # =============================================================================
-# 6. Sidebar Controls
+# 6. Sidebar (Project Overview & Controls)
 # =============================================================================
 with st.sidebar:
-    st.markdown("### 🌿 **Indian Flora AI**")
-    st.caption("Plant Species & Pathology Diagnosis System")
+    st.markdown("### 🌿 **FloraScan India**")
+    st.markdown("<span style='font-size:0.85rem; color:#94a3b8;'>Automated Plant Identification & Crop Pathology System</span>", unsafe_allow_html=True)
     st.divider()
     
-    st.markdown("#### ⚡ AI Engines")
-    client = get_gemini_client()
-    if client:
-        st.success("🟢 **Gemini 2.0 Flash Vision**: Active")
-    else:
-        st.info("ℹ️ **Gemini Cloud Vision**: Optional")
-        with st.expander("🔑 Connect Gemini API Key"):
-            k_input = st.text_input("Enter Key:", type="password", key="sidebar_key")
-            if k_input:
-                os.environ["GEMINI_API_KEY"] = k_input
-                st.success("Saved! Click below to activate.")
-                st.button("Activate", on_click=lambda: st.rerun())
+    st.markdown("#### **Input Options**")
+    input_source = st.radio("Choose Input Method:", ["Upload Photo", "Select Test Sample", "Webcam Capture"], label_visibility="collapsed")
+    
+    show_saliency = st.checkbox("Show Leaf Feature Analysis (Sobel Saliency)", value=True)
+    
+    st.divider()
+    st.markdown("#### **Project Technical Specs**")
+    st.markdown("""
+    - **Architecture**: MobileNetV2 (Transfer Learning) + Hierarchical Feature Matcher
+    - **Training Data**: 54,303 images (PlantVillage) + 4,300 flower samples
+    - **Indian Flora Catalog**: 140 species documented
+    - **Task**: Multi-class classification & foliar disease detection
+    """)
+    
+    st.divider()
+    st.caption("B.Tech Final Year Major Project")
+    st.caption("Department of Computer Science & Engineering")
+
+# =============================================================================
+# 7. Main Application Dashboard
+# =============================================================================
+st.markdown("""
+<div class="project-header">
+    <div class="project-badge">ACADEMIC RESEARCH PROJECT</div>
+    <h1 class="project-title">FloraScan India</h1>
+    <div class="project-subtitle">Automated Botanical Identification and Foliar Pathology Diagnostic System for Indian Flora, Keystone Trees & Agricultural Crops</div>
+</div>
+""", unsafe_allow_html=True)
+
+tab_diagnose, tab_catalog = st.tabs(["🔍 Identification & Health Diagnosis", "📚 Botanical Reference Catalog (140 Species)"])
+
+# -----------------------------------------------------------------------------
+# TAB 1: IDENTIFICATION & DIAGNOSIS
+# -----------------------------------------------------------------------------
+with tab_diagnose:
+    col_upload, col_report = st.columns([1, 1.25], gap="large")
+    sample_img = None
+    
+    with col_upload:
+        st.markdown("#### 1. Input Plant Sample")
+        
+        if input_source == "Upload Photo":
+            uploaded_file = st.file_uploader(
+                "Upload a clear photograph of a leaf, tree canopy, flower, or fruit",
+                type=["jpg", "jpeg", "png", "webp"],
+                help="Supported formats: JPEG, PNG. For crop leaves, close-up photos yield the highest diagnostic accuracy."
+            )
+            if uploaded_file:
+                sample_img = Image.open(uploaded_file).convert("RGB")
                 
-    st.success("🟢 **Hierarchical Vision Pipeline**: Ready")
-    st.success("🟢 **Deep Crop Pathology CNN**: Ready")
-    
-    st.divider()
-    st.markdown("#### 📊 Knowledge Base")
-    st.metric("Documented Indian Species", len(plant_db))
-    st.caption("🇮🇳 Trees, Flowers, Fruits, Crops & Ayurvedic Herbs")
-    
-    st.divider()
-    input_source = st.radio("Input Source:", ["📸 Upload Image", "🧪 Select Verified Sample", "📷 Webcam Snapshot"])
-    show_heatmap = st.toggle("🧠 Explainable AI (Edge Saliency)", value=True)
-
-# =============================================================================
-# 7. Main Dashboard Interface
-# =============================================================================
-st.markdown('<div class="hero-title">🌿 Indian Flora Species & Pathology AI</div>', unsafe_allow_html=True)
-st.markdown('<div class="hero-subtitle">University Major Project — Specialized for Indian Botanical Flora, Keystone Trees, Agricultural Crops & Ayurvedic Herbs</div>', unsafe_allow_html=True)
-
-tab_id, tab_encyclopedia = st.tabs(["🔍 Identify & Diagnose Plant", "📚 Indian Botanical Encyclopedia"])
-
-# -----------------------------------------------------------------------------
-# TAB 1: IDENTIFICATION
-# -----------------------------------------------------------------------------
-with tab_id:
-    col_img, col_diag = st.columns([1, 1.25], gap="large")
-    target_img = None
-    
-    with col_img:
-        st.markdown("#### 1. Input Plant Image")
-        if input_source == "📸 Upload Image":
-            uploaded = st.file_uploader("Upload leaf, tree, flower or fruit photo (JPG, PNG)", type=["jpg", "jpeg", "png", "webp"])
-            if uploaded:
-                target_img = Image.open(uploaded).convert("RGB")
-        elif input_source == "🧪 Select Verified Sample":
+        elif input_source == "Select Test Sample":
             samples_dir = "sample_images"
             if os.path.exists(samples_dir):
                 files = sorted([f for f in os.listdir(samples_dir) if f.lower().endswith(('.jpg', '.png'))])
-                chosen = st.selectbox("Choose a test sample:", files, format_func=lambda x: f"🌿 {x.rsplit('.', 1)[0].replace('_', ' ').title()}")
+                chosen = st.selectbox(
+                    "Select a benchmark test sample:",
+                    files,
+                    format_func=lambda x: f"🌿 {x.rsplit('.', 1)[0].replace('_', ' ').title()}"
+                )
                 if chosen:
-                    target_img = Image.open(os.path.join(samples_dir, chosen)).convert("RGB")
-        elif input_source == "📷 Webcam Snapshot":
-            cam = st.camera_input("Take a photo of a plant")
-            if cam:
-                target_img = Image.open(cam).convert("RGB")
-                
-        if target_img:
-            st.image(target_img, caption="Input Botanical Subject", width="stretch")
-            if show_heatmap:
-                with st.spinner("Generating Explainable AI Heatmap..."):
-                    hmap = explainable_saliency_heatmap(target_img)
-                    st.image(hmap, caption="🧠 Explainable AI: Structural Focus Heatmap (Veins / Canopy Edges)", width="stretch")
-        else:
-            st.info("👈 Please upload or select a plant photo on the left to begin diagnosis.")
-
-    with col_diag:
-        st.markdown("#### 2. Botanical Identification Report")
-        if target_img:
-            with st.spinner("🌿 Analyzing across Hierarchical AI Vision Engines..."):
-                gemini_res = query_gemini_vision(target_img)
-                local_res = hierarchical_botanical_classifier(target_img)
-                
-                if gemini_res and gemini_res.get("confidence", 0) > 0.60:
-                    species_name = gemini_res.get("species", "Unknown")
-                    sci_name = gemini_res.get("scientific_name", "")
-                    confidence = float(gemini_res.get("confidence", 0.95))
-                    engine_used = "Gemini 2.0 Flash Multimodal Vision"
-                    health_status = gemini_res.get("health_status", "Healthy")
-                    condition_diag = gemini_res.get("condition_diagnosis", "")
-                    treatment_rec = gemini_res.get("treatment", "")
-                    domain_detected = gemini_res.get("category", "Botanical").title()
-                    candidates = [(species_name, confidence)]
-                elif local_res:
-                    species_name = local_res["species"]
-                    confidence = local_res["confidence"]
-                    domain_detected = local_res["domain"]
-                    engine_used = local_res["engine"]
-                    candidates = local_res.get("candidates", [])
-                    sci_name = ""
-                    health_status = "Healthy"
-                    condition_diag = ""
-                    treatment_rec = ""
-                else:
-                    species_name = None
+                    sample_img = Image.open(os.path.join(samples_dir, chosen)).convert("RGB")
                     
-            if species_name:
+        elif input_source == "Webcam Capture":
+            cam_shot = st.camera_input("Capture plant specimen via camera")
+            if cam_shot:
+                sample_img = Image.open(cam_shot).convert("RGB")
+                
+        if sample_img:
+            st.image(sample_img, caption="Input Specimen", width="stretch")
+            if show_saliency:
+                with st.spinner("Extracting structural gradient features..."):
+                    sal_map = generate_saliency_map(sample_img)
+                    st.image(sal_map, caption="Structural Edge Analysis (Venation & Ridge Highlights)", width="stretch")
+        else:
+            st.info("👈 Upload an image or select a benchmark sample to begin diagnosis.")
+
+    with col_report:
+        st.markdown("#### 2. Diagnostic & Botanical Report")
+        
+        if sample_img:
+            with st.spinner("Processing specimen through classification pipeline..."):
+                result = run_identification_pipeline(sample_img)
+                
+            if result:
+                species_name = result["species"]
+                confidence = result["confidence"]
+                category = result["category"]
+                model_type = result["model_type"]
+                candidates = result.get("candidates", [])
+                
+                # Top Candidates Selector if multiple matches
                 if len(candidates) > 1:
                     cand_names = [c[0] for c in candidates[:4]]
-                    sel_cand = st.radio("🌿 Candidate Matches (Click to inspect):", cand_names, index=0, horizontal=True)
-                    if sel_cand != species_name:
-                        species_name = sel_cand
-                        confidence = next((c[1] for c in candidates if c[0] == sel_cand), confidence)
+                    selected = st.radio("Alternative Predictions (Ranked):", cand_names, index=0, horizontal=True)
+                    if selected != species_name:
+                        species_name = selected
+                        confidence = next((c[1] for c in candidates if c[0] == selected), confidence)
 
-                profile = find_db_profile(species_name, sci_name)
+                # Fetch Botanical Profile
+                profile = get_species_profile(species_name)
                 if not profile:
                     profile = {
                         "species": species_name,
-                        "scientific_name": sci_name or f"{species_name} sp.",
+                        "scientific_name": f"{species_name} sp.",
                         "family": "Plantae",
                         "order": "Magnoliophyta",
-                        "health_status": health_status,
+                        "health_status": "Healthy",
                         "active_compounds": "Flavonoids, Polyphenols, Chlorophyll",
                         "sunlight": "Full Sun to Partial Shade",
-                        "watering": "Moderate",
-                        "soil": "Fertile well-drained soil",
-                        "toxicity_pets": "Non-toxic in small quantities",
+                        "watering": "Moderate watering",
+                        "soil": "Well-draining fertile soil",
+                        "toxicity_pets": "Non-toxic under normal exposure",
                         "uses": "Ecological, shade, or agricultural significance."
                     }
                 
-                final_sci = sci_name or profile.get("scientific_name", "N/A")
-                is_diseased = "diseas" in profile.get("health_status", "").lower() or "blight" in species_name.lower() or "rot" in species_name.lower() or "rust" in species_name.lower() or "scab" in species_name.lower()
-                status_badge = '<span class="badge badge-red">🔴 PATHOLOGY DETECTED</span>' if is_diseased else '<span class="badge badge-green">🟢 HEALTHY SPECIES</span>'
+                # Status determination
+                is_diseased = "diseas" in profile.get("health_status", "").lower() or any(
+                    term in species_name.lower() for term in ["blight", "rot", "rust", "scab", "spot", "mildew", "virus"]
+                )
                 
+                status_html = (
+                    '<span class="status-pill status-warning">⚠️ Pathological Symptoms Detected</span>'
+                    if is_diseased else
+                    '<span class="status-pill status-healthy">✓ Healthy Specimen</span>'
+                )
+                
+                # Primary Specimen Card
                 st.markdown(f"""
-                <div class="result-card">
+                <div class="species-card">
                     <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap;">
                         <div>
-                            <div class="species-title">{profile.get('species', species_name)}</div>
-                            <div class="sci-title">🔬 {final_sci}</div>
+                            <div class="plant-name">{profile.get('species', species_name)}</div>
+                            <div class="scientific-name">{profile.get('scientific_name', 'Botanical classification pending')}</div>
                         </div>
                         <div style="text-align: right;">
-                            <span class="conf-pill">{confidence*100:.1f}% Confidence</span><br>
-                            <div style="margin-top: 6px;">{status_badge}</div>
+                            <span class="conf-tag">{confidence*100:.1f}% Confidence</span>
+                            <div style="margin-top: 8px;">{status_html}</div>
                         </div>
                     </div>
-                    <div style="margin-top: 14px;">
-                        <span class="badge badge-blue">📁 Domain: {domain_detected}</span>
-                        <span class="badge badge-purple">🌿 Family: {profile.get('family', 'N/A')}</span>
-                        <span class="badge badge-green">⚡ Engine: {engine_used}</span>
+                    <div style="margin-top: 14px; font-size: 0.85rem; color: #94a3b8;">
+                        <b>Category:</b> {category} &nbsp;•&nbsp; 
+                        <b>Family:</b> {profile.get('family', 'N/A')} &nbsp;•&nbsp;
+                        <b>Inference Model:</b> {model_type}
                     </div>
                 </div>
                 """, unsafe_allow_html=True)
                 
+                # Confidence Progress
                 st.progress(min(float(confidence), 1.0))
                 
+                # Indian Regional Names
                 regional = profile.get("regional_names", {})
                 if regional and any(regional.values()):
                     parts = [f"<b>{lang.title()}:</b> {val}" for lang, val in regional.items() if val]
                     st.markdown(f"""
-                    <div class="info-box">
-                        <div class="box-label">🗣️ Indian Regional Names</div>
-                        <div class="box-val">{' &nbsp;|&nbsp; '.join(parts)}</div>
+                    <div class="data-card">
+                        <div class="data-label">Common Regional Vernacular (India)</div>
+                        <div class="data-value">{' &nbsp;•&nbsp; '.join(parts)}</div>
                     </div>
                     """, unsafe_allow_html=True)
                 
-                if is_diseased or condition_diag:
-                    cond_name = condition_diag or profile.get("condition_type", species_name)
-                    treat_val = treatment_rec or profile.get("treatment", "Apply organic copper-based fungicide and isolate infected foliage.")
+                # Disease Diagnosis & Remedy
+                if is_diseased:
+                    cond_name = profile.get("condition_type", species_name)
+                    treatment = profile.get("treatment", "Apply recommended organic copper-based fungicide and isolate infected foliage.")
                     st.markdown(f"""
-                    <div class="pathology-box">
-                        <div class="box-label" style="color: #fca5a5;">🚨 PLANT PATHOLOGY DIAGNOSIS: {cond_name}</div>
-                        <div class="box-val" style="margin-top: 6px;"><b>💊 Recommended Cure:</b> {treat_val}</div>
+                    <div class="diagnosis-box">
+                        <div class="data-label" style="color: #fca5a5;">Foliar Pathology Diagnosis</div>
+                        <div style="font-weight: 700; color: #fee2e2; font-size: 1rem; margin-top: 2px;">{cond_name}</div>
+                        <div class="data-value" style="margin-top: 8px;">
+                            <b>Recommended Treatment & Cultural Control:</b><br>{treatment}
+                        </div>
                     </div>
                     """, unsafe_allow_html=True)
-                    
+                
+                # Active Botanical Compounds
                 compounds = profile.get("active_compounds", "")
                 if compounds:
                     st.markdown(f"""
-                    <div class="chem-box">
-                        <div class="box-label" style="color: #38bdf8;">🧬 Bioactive Phytochemicals & Natural Metabolites</div>
-                        <div class="box-val">{compounds}</div>
+                    <div class="data-card">
+                        <div class="data-label">Key Bioactive Compounds & Phytochemicals</div>
+                        <div class="data-value">{compounds}</div>
                     </div>
                     """, unsafe_allow_html=True)
                     
+                # Traditional Uses
                 ayur = profile.get("ayurvedic_uses", "")
                 if ayur:
                     st.markdown(f"""
-                    <div class="ayur-box">
-                        <div class="box-label" style="color: #c084fc;">🕉️ Authentic Ayurvedic & Ethnomedicinal Properties</div>
-                        <div class="box-val">{ayur}</div>
+                    <div class="data-card">
+                        <div class="data-label">Traditional & Ethnobotanical Significance</div>
+                        <div class="data-value">{ayur}</div>
                     </div>
                     """, unsafe_allow_html=True)
-                    
-                st.markdown("### ☀️ Cultivation & Environmental Care")
+                
+                # Environmental & Cultivation Requirements
+                st.markdown('<div class="section-header">Cultivation & Environmental Care</div>', unsafe_allow_html=True)
                 c1, c2 = st.columns(2)
                 with c1:
                     st.markdown(f"""
-                    <div class="info-box">
-                        <div class="box-label">☀️ Sunlight Requirement</div>
-                        <div class="box-val">{profile.get('sunlight', 'Full Sun')}</div>
+                    <div class="data-card">
+                        <div class="data-label">Sunlight Requirements</div>
+                        <div class="data-value">{profile.get('sunlight', 'Full Sun')}</div>
                     </div>
-                    <div class="info-box">
-                        <div class="box-label">💧 Watering Routine</div>
-                        <div class="box-val">{profile.get('watering', 'Moderate')}</div>
+                    <div class="data-card">
+                        <div class="data-label">Watering Schedule</div>
+                        <div class="data-value">{profile.get('watering', 'Moderate')}</div>
                     </div>
                     """, unsafe_allow_html=True)
                 with c2:
                     st.markdown(f"""
-                    <div class="info-box">
-                        <div class="box-label">🌱 Soil Preference</div>
-                        <div class="box-val">{profile.get('soil', 'Well-draining loam')}</div>
+                    <div class="data-card">
+                        <div class="data-label">Soil Preference</div>
+                        <div class="data-value">{profile.get('soil', 'Well-drained loam')}</div>
                     </div>
-                    <div class="info-box">
-                        <div class="box-label">💡 Uses & Ecosystem Role</div>
-                        <div class="box-val">{profile.get('uses', 'Ecological and shade value')}</div>
+                    <div class="data-card">
+                        <div class="data-label">Primary Uses</div>
+                        <div class="data-value">{profile.get('uses', 'Ecological / agricultural')}</div>
                     </div>
                     """, unsafe_allow_html=True)
                     
+                # Toxicity Safety
                 tox = profile.get("toxicity_pets", "")
                 if tox:
                     is_safe = "non-toxic" in tox.lower() or "safe" in tox.lower() or "not toxic" in tox.lower()
-                    t_bg = "#052e16" if is_safe else "#450a0a"
-                    t_border = "#10b981" if is_safe else "#ef4444"
-                    t_icon = "✅" if is_safe else "⚠️"
+                    t_icon = "✓" if is_safe else "⚠️"
                     st.markdown(f"""
-                    <div style="background: {t_bg}; border-left: 4px solid {t_border}; padding: 12px 16px; border-radius: 0 8px 8px 0; margin-bottom: 12px;">
-                        <div class="box-label">{t_icon} Safety & Toxicity:</div>
-                        <div class="box-val">{tox}</div>
+                    <div class="data-card">
+                        <div class="data-label">{t_icon} Toxicity & Safety Assessment</div>
+                        <div class="data-value">{tox}</div>
                     </div>
                     """, unsafe_allow_html=True)
                     
+                # Ranked Probability Distribution
                 if candidates:
-                    with st.expander("📊 Candidate Probability Distribution"):
+                    with st.expander("Model Probability Distribution (Top Classes)"):
                         for rank, (cand, prob) in enumerate(candidates[:5]):
-                            st.write(f"**Rank {rank+1}**: `{cand}` — **{prob*100:.1f}%**")
+                            st.write(f"**Rank {rank+1}**: `{cand}` — **{prob*100:.2f}%**")
             else:
-                st.warning("⚠️ Could not identify botanical species. Please try uploading a clearer photo with proper lighting.")
+                st.warning("Specimen could not be classified with sufficient confidence. Please provide a clearer image.")
         else:
-            st.info("Analysis report will appear here once an image is uploaded.")
+            st.info("Upload or select a specimen to view identification results.")
 
 # -----------------------------------------------------------------------------
-# TAB 2: BOTANICAL ENCYCLOPEDIA
+# TAB 2: BOTANICAL REFERENCE CATALOG
 # -----------------------------------------------------------------------------
-with tab_encyclopedia:
-    st.markdown("### 📚 Comprehensive Indian Botanical Encyclopedia")
-    st.write(f"Explore **{len(plant_db)} cataloged species** covering Indian Keystone Trees, Agricultural Crops, Flowers, Fruits & Ayurvedic Herbs:")
+with tab_catalog:
+    st.markdown("### Indian Flora Reference Catalog")
+    st.write(f"Comprehensive reference database documenting **{len(plant_db)} species** across Keystone Trees, Agricultural Crops, Ornamentals, and Ethnomedicinal Herbs of the Indian subcontinent.")
     
-    col_q, col_cat = st.columns([2, 1])
-    with col_q:
-        q = st.text_input("🔍 Search species, Hindi name, scientific name, or disease:", "")
-    with col_cat:
-        available_cats = sorted(set(v.get("category", "other") for v in plant_db.values()))
-        cat_sel = st.multiselect("Filter by Category:", available_cats, default=[])
+    col_search, col_filter = st.columns([2, 1])
+    with col_search:
+        search_query = st.text_input("Search catalog by common name, Hindi name, or scientific binomial:", "")
+    with col_filter:
+        categories = sorted(set(v.get("category", "General") for v in plant_db.values()))
+        cat_chosen = st.multiselect("Filter Category:", categories, default=[])
         
-    filtered = []
+    matched = []
     for k, v in plant_db.items():
-        if cat_sel and v.get("category", "other") not in cat_sel:
+        if cat_chosen and v.get("category", "General") not in cat_chosen:
             continue
-        if q:
-            searchable = f"{k} {v.get('species','')} {v.get('scientific_name','')} {v.get('active_compounds','')} {str(v.get('regional_names',{}))}".lower()
-            if q.lower() not in searchable:
+        if search_query:
+            text_corpus = f"{k} {v.get('species','')} {v.get('scientific_name','')} {str(v.get('regional_names',{}))}".lower()
+            if search_query.lower() not in text_corpus:
                 continue
-        filtered.append((k, v))
+        matched.append((k, v))
         
-    st.caption(f"Displaying {len(filtered)} matching species")
+    st.caption(f"Showing {len(matched)} matching species records")
     grid = st.columns(3)
-    for idx, (k, p) in enumerate(filtered):
-        cat = p.get("category", "plant")
+    for idx, (k, p) in enumerate(matched):
         hindi = p.get("regional_names", {}).get("hindi", "")
-        h_tag = f" ({hindi})" if hindi else ""
+        hindi_disp = f" ({hindi})" if hindi else ""
         with grid[idx % 3]:
             st.markdown(f"""
-            <div class="enc-card">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h4 style="margin: 0; color: #f1f5f9;">{k}{h_tag}</h4>
-                    <span class="badge badge-green">{cat.upper()}</span>
+            <div class="catalog-item">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div style="font-weight: 700; color: #f8fafc; font-size: 1rem;">{k}{hindi_disp}</div>
+                    <span style="font-size: 0.72rem; background: #334155; color: #94a3b8; padding: 2px 8px; border-radius: 4px;">{p.get('category','Plant').upper()}</span>
                 </div>
-                <div style="font-style: italic; color: #34d399; font-size: 0.9rem; margin-top: 4px;">{p.get('scientific_name', '')}</div>
-                <div style="color: #94a3b8; font-size: 0.85rem; margin-top: 8px;">
+                <div style="font-family: 'Lora', serif; font-style: italic; color: #34d399; font-size: 0.88rem; margin-top: 3px;">{p.get('scientific_name', '')}</div>
+                <div style="color: #94a3b8; font-size: 0.82rem; margin-top: 8px; line-height: 1.4;">
                     <b>Family:</b> {p.get('family', 'N/A')}<br>
-                    <b>Active:</b> {p.get('active_compounds', 'N/A')[:60]}...
+                    <b>Uses:</b> {p.get('uses', 'Ecological')[:70]}...
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
-# Footer
-st.divider()
+# Clean, professional university footer
 st.markdown("""
-<div style="text-align: center; color: #64748b; font-size: 0.85rem;">
-    🌿 <b>Indian Flora AI</b> — Major Project | University Semester Evaluation<br>
-    Trained on 54,000 real images (PlantVillage) + Hierarchical Indian Flora Zero-Shot Vision + Gemini 2.0 Flash Integration
+<div class="footer-text">
+    FloraScan India — Automated Botanical Identification & Plant Pathology System<br>
+    Final Year Major Project | Department of Computer Science & Engineering<br>
+    Implemented in Python with TensorFlow, Keras & PyTorch
 </div>
 """, unsafe_allow_html=True)
