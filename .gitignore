@@ -3,6 +3,7 @@
 *.tar.gz
 *.rar
 archive*/
+weights/
 
 # Python cache & virtual environments
 __pycache__/
